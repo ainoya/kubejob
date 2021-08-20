@@ -1,0 +1,16 @@
+before:
+  hooks:
+    - go mod download
+builds:
+- goos:
+  - linux
+  - darwin
+  goarch:
+  - amd64
+  - arm64
+  env:
+  - CGO_ENABLED=0
+archives:
+- format: binary
+  replacements:
+    amd64: x86_64
