@@ -10,6 +10,7 @@ builds:
   - arm64
   env:
   - CGO_ENABLED=0
+  main: ./cmd/kubejob/main.go
 archives:
 - format: binary
   replacements:
