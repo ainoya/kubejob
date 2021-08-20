@@ -13,5 +13,3 @@ builds:
   main: ./cmd/kubejob/main.go
 archives:
 - format: binary
-  replacements:
-    amd64: x86_64
