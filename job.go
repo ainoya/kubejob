@@ -583,7 +583,7 @@ func (j *Job) containerLog(log *ContainerLog) {
 	if j.containerLogger != nil {
 		j.containerLogger(log)
 	} else if !log.IsFinished {
-		fmt.Fprintf(os.Stderr, "%s", log.Log)
+		fmt.Fprintf(os.Stdout, "%s", log.Log)
 	}
 }
 
@@ -598,7 +598,7 @@ func (j *Job) logf(format string, args ...interface{}) {
 	if j.logger != nil {
 		j.logger(log)
 	} else {
-		fmt.Fprintf(os.Stderr, "%s\n", log)
+		fmt.Fprintf(os.Stdout, "%s\n", log)
 	}
 }
 
