@@ -638,13 +638,20 @@ func (j *Job) watchLoop(ctx context.Context, watcher watch.Interface) (e error) 
 				// In this case, we should stop watch loop, so return instantly.
 				return nil
 			}
-			if ctx.Err() != nil && pod.Status.Phase != core.PodPending {
+			if err := ctx.Err(); err != nil && pod.Status.Phase != core.PodPending {
+				j.logf("[INFO] There are any ctx error: %s", err)
 				return nil
 			}
 			if pod.Status.Phase == phase {
+				j.logf("[INFO] Pod status: %+v", pod.Status.Phase)
+				for _, status := range pod.Status.ContainerStatuses {
+					j.logf("[INFO] Container status: [%s] %s", status.State.Waiting.Reason, status.State.Waiting.Message)
+				}
 				continue
 			}
 			switch pod.Status.Phase {
+			case core.PodPending:
+				j.logf("[INFO] Pod status pending..: %s", pod.Status.Message)
 			case core.PodRunning:
 				once.Do(func() {
 					eg.Go(func() error {

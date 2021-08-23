@@ -21,6 +21,7 @@ type option struct {
 	Namespace string `description:"specify namespace" short:"n" long:"namespace" default:"default"`
 	File      string `description:"specify yaml or json file for written job definition" short:"f" long:"file"`
 	Image     string `description:"specify container image" short:"i" long:"image"`
+	Verbose bool `description:"set log level to verbose" short:"v" long:"verbose"`
 }
 
 func getKubeConfig() string {
@@ -90,6 +91,10 @@ func _main(args []string, opt option) error {
 			return xerrors.Errorf("failed to build job: %w", err)
 		}
 		job = j
+	}
+
+	if opt.Verbose {
+		job.SetVerboseLog(true)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
