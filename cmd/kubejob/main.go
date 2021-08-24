@@ -21,7 +21,8 @@ type option struct {
 	Namespace string `description:"specify namespace" short:"n" long:"namespace" default:"default"`
 	File      string `description:"specify yaml or json file for written job definition" short:"f" long:"file"`
 	Image     string `description:"specify container image" short:"i" long:"image"`
-	Verbose bool `description:"set log level to verbose" short:"v" long:"verbose"`
+	Verbose   bool   `description:"set log level to verbose" short:"v" long:"verbose"`
+	Logformat string `description:"log format" short:"t" long:"template" default:"{{ .Timestamp }} | {{ .Message }}"`
 }
 
 func getKubeConfig() string {
@@ -96,6 +97,8 @@ func _main(args []string, opt option) error {
 	if opt.Verbose {
 		job.SetVerboseLog(true)
 	}
+	cl := &kubejob.ECSFormatContainerLogger{LogFormat: fmt.Sprintf("%s\n", opt.Logformat)}
+	job.SetContainerLogger(cl)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	interrupt := make(chan os.Signal, 1)

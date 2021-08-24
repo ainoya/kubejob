@@ -23,6 +23,14 @@ func init() {
 	cfg = c
 }
 
+type TestContainerLogger struct {
+	t *testing.T
+}
+
+func (tcl *TestContainerLogger) Log(cl *kubejob.ContainerLog) {
+	tcl.t.Log(tcl.t)
+}
+
 func Test_SimpleRunning(t *testing.T) {
 	job, err := kubejob.NewJobBuilder(cfg, "default").
 		SetImage("golang:1.15").
@@ -31,9 +39,8 @@ func Test_SimpleRunning(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	job.SetContainerLogger(func(cl *kubejob.ContainerLog) {
-		t.Log(cl.Log)
-	})
+	tcl := &TestContainerLogger{t: t}
+	job.SetContainerLogger(tcl)
 	if err := job.Run(context.Background()); err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -120,6 +127,24 @@ func Test_CaptureVerboseLog(t *testing.T) {
 	}
 }
 
+type TestContainerLogger2 struct {
+	t *testing.T
+	callbacked bool
+	containerLogErr error
+}
+
+func (tcl *TestContainerLogger2) Log(cl *kubejob.ContainerLog) {
+	tcl.callbacked = true
+	if cl.Pod == nil {
+		tcl.containerLogErr = xerrors.Errorf("could not find ContainerLog.Pod")
+		return
+	}
+	if cl.Container.Name != "test" {
+		tcl.containerLogErr = xerrors.Errorf("could not find ContainerLog.Container %s", cl.Container.Name)
+		return
+	}
+}
+
 func Test_RunWithContainerLogger(t *testing.T) {
 	job, err := kubejob.NewJobBuilder(cfg, "default").BuildWithJob(&batchv1.Job{
 		Spec: batchv1.JobSpec{
@@ -136,32 +161,19 @@ func Test_RunWithContainerLogger(t *testing.T) {
 			},
 		},
 	})
-	var (
-		callbacked      bool
-		containerLogErr error
-	)
-	job.SetContainerLogger(func(log *kubejob.ContainerLog) {
-		callbacked = true
-		if log.Pod == nil {
-			containerLogErr = xerrors.Errorf("could not find ContainerLog.Pod")
-			return
-		}
-		if log.Container.Name != "test" {
-			containerLogErr = xerrors.Errorf("could not find ContainerLog.Container %s", log.Container.Name)
-			return
-		}
-	})
+	tcl := &TestContainerLogger2{t: t}
+	job.SetContainerLogger(tcl)
 	if err != nil {
 		t.Fatalf("failed to build job: %+v", err)
 	}
 	if err := job.Run(context.Background()); err != nil {
 		t.Fatalf("failed to run: %+v", err)
 	}
-	if !callbacked {
+	if !tcl.callbacked {
 		t.Fatal("doesn't work ContainerLogger")
 	}
-	if containerLogErr != nil {
-		t.Fatal(containerLogErr)
+	if tcl.containerLogErr != nil {
+		t.Fatal(tcl.containerLogErr)
 	}
 }
 
