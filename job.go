@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"strings"
 	"sync"
+	"text/template"
 	"time"
 
 	"github.com/lestrrat-go/backoff"
@@ -213,14 +215,57 @@ type Job struct {
 	podRunningCallback       func(*core.Pod) error
 }
 
-type ContainerLogger func(*ContainerLog)
+type ContainerLogger  interface {
+	Log(cl *ContainerLog)
+}
 type Logger func(string)
+
+type ECSFormatContainerLogger struct {
+	LogFormat string
+}
+
+func (efc *ECSFormatContainerLogger) Log(cl *ContainerLog) {
+	ecsFormatLog, err := cl.parseECSFormatLog()
+	if err != nil {
+		fmt.Fprintf(os.Stdout, "%s", cl.Log)
+		return
+	}
+	tpl, err := template.New("").Parse(efc.LogFormat)
+	if err != nil {
+		fmt.Fprintf(os.Stdout, "%s", cl.Log)
+		return
+	}
+
+	if err := tpl.Execute(os.Stdout, ecsFormatLog); err != nil {
+		fmt.Fprintf(os.Stdout, "%s", cl.Log)
+		return
+	}
+}
 
 type ContainerLog struct {
 	Pod        *core.Pod
 	Container  core.Container
 	Log        string
 	IsFinished bool
+}
+
+type ECSFormatLog struct {
+	Timestamp string `json:"@timestamp"`
+	Loglevel  string `json:"log.level"`
+	Message   string `json:"message"`
+	ProcessThreadName string `json:"process.thread.name"`
+	LoggerName string `json:"log.logger"`
+	EventDataset string `json:"event.dataset"`
+	EcsVersion string `json:"ecs.version"`
+	ServiceName string `json:"service.name"`
+}
+
+func (c *ContainerLog) parseECSFormatLog() (ECSFormatLog, error) {
+	var ecsFormatLog ECSFormatLog
+	if err := json.Unmarshal([]byte(c.Log), &ecsFormatLog); err != nil {
+		return ECSFormatLog{}, err
+	}
+	return ecsFormatLog, nil
 }
 
 func (j *Job) SetVerboseLog(verboseLog bool) {
@@ -581,7 +626,7 @@ func (j *Job) Run(ctx context.Context) (e error) {
 
 func (j *Job) containerLog(log *ContainerLog) {
 	if j.containerLogger != nil {
-		j.containerLogger(log)
+		j.containerLogger.Log(log)
 	} else if !log.IsFinished {
 		fmt.Fprintf(os.Stdout, "%s", log.Log)
 	}
