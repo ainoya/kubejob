@@ -258,6 +258,7 @@ type ECSFormatLog struct {
 	EventDataset string `json:"event.dataset"`
 	EcsVersion string `json:"ecs.version"`
 	ServiceName string `json:"service.name"`
+	StackTrace string `json:"error.stack_trace"`
 }
 
 func (c *ContainerLog) parseECSFormatLog() (ECSFormatLog, error) {

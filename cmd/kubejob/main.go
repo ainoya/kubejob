@@ -22,7 +22,7 @@ type option struct {
 	File      string `description:"specify yaml or json file for written job definition" short:"f" long:"file"`
 	Image     string `description:"specify container image" short:"i" long:"image"`
 	Verbose   bool   `description:"set log level to verbose" short:"v" long:"verbose"`
-	Logformat string `description:"log format" short:"t" long:"template" default:"{{ .Timestamp }} | {{ .Message }}"`
+	Logformat string `description:"log format" short:"t" long:"template" default:"{{ .Timestamp }} | {{ .Message }}{{ if .StackTrace }}\n{{ end }}{{ .StackTrace }}"`
 }
 
 func getKubeConfig() string {
