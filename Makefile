@@ -9,7 +9,7 @@ $(BIN):
 	@mkdir -p $(BIN)
 
 KIND := $(BIN)/kind
-KIND_VERSION := v0.11.0
+KIND_VERSION := v0.17.0
 $(KIND): | $(BIN)
 	@curl -sSLo $(KIND) "https://kind.sigs.k8s.io/dl/$(KIND_VERSION)/kind-$(UNAME_OS)-amd64"
 	@chmod +x $(KIND)
