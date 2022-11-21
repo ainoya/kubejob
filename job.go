@@ -215,7 +215,7 @@ type Job struct {
 	podRunningCallback       func(*core.Pod) error
 }
 
-type ContainerLogger  interface {
+type ContainerLogger interface {
 	Log(cl *ContainerLog)
 }
 type Logger func(string)
@@ -250,15 +250,15 @@ type ContainerLog struct {
 }
 
 type ECSFormatLog struct {
-	Timestamp string `json:"@timestamp"`
-	Loglevel  string `json:"log.level"`
-	Message   string `json:"message"`
+	Timestamp         string `json:"@timestamp"`
+	Loglevel          string `json:"log.level"`
+	Message           string `json:"message"`
 	ProcessThreadName string `json:"process.thread.name"`
-	LoggerName string `json:"log.logger"`
-	EventDataset string `json:"event.dataset"`
-	EcsVersion string `json:"ecs.version"`
-	ServiceName string `json:"service.name"`
-	StackTrace string `json:"error.stack_trace"`
+	LoggerName        string `json:"log.logger"`
+	EventDataset      string `json:"event.dataset"`
+	EcsVersion        string `json:"ecs.version"`
+	ServiceName       string `json:"service.name"`
+	StackTrace        string `json:"error.stack_trace"`
 }
 
 func (c *ContainerLog) parseECSFormatLog() (ECSFormatLog, error) {
@@ -691,7 +691,9 @@ func (j *Job) watchLoop(ctx context.Context, watcher watch.Interface) (e error) 
 			if pod.Status.Phase == phase {
 				j.logf("[INFO] Pod status: %+v", pod.Status.Phase)
 				for _, status := range pod.Status.ContainerStatuses {
-					j.logf("[INFO] Container status: [%s] %s", status.State.Waiting.Reason, status.State.Waiting.Message)
+					if status.State.Waiting != nil {
+						j.logf("[INFO] Container status: [%s] %s", status.State.Waiting.Reason, status.State.Waiting.Message)
+					}
 				}
 				continue
 			}
